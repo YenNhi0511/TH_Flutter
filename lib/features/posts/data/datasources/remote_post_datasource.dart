@@ -1,16 +1,17 @@
-import 'dart:io';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_storage/firebase_storage.dart';
 import 'package:mangxahoi/features/posts/domain/entities/post.dart';
 import 'package:mangxahoi/features/posts/domain/entities/comment.dart';
+import 'package:mangxahoi/core/services/cloudinary_service.dart';
 
 class RemotePostDatasource {
   final FirebaseFirestore _firestore;
-  final FirebaseStorage _storage;
+  final CloudinaryService _cloudinary;
 
-  RemotePostDatasource({FirebaseFirestore? firestore, FirebaseStorage? storage})
-    : _firestore = firestore ?? FirebaseFirestore.instance,
-      _storage = storage ?? FirebaseStorage.instance;
+  RemotePostDatasource({
+    FirebaseFirestore? firestore,
+    CloudinaryService? cloudinary,
+  }) : _firestore = firestore ?? FirebaseFirestore.instance,
+       _cloudinary = cloudinary ?? CloudinaryService();
 
   Future<void> createPost({
     required String userId,
@@ -20,14 +21,14 @@ class RemotePostDatasource {
     required String? caption,
   }) async {
     final postId = _firestore.collection('posts').doc().id;
-    final ref = _storage.ref().child('posts/$userId/$postId.jpg');
 
-    await ref.putFile(
-      File(imagePath),
-      SettableMetadata(contentType: 'image/jpeg'),
+    // Upload to Cloudinary instead of Firebase Storage
+    final imageUrl = await _cloudinary.uploadImage(
+      imagePath: imagePath,
+      folder: 'posts',
+      userId: userId,
     );
 
-    final imageUrl = await ref.getDownloadURL();
     final now = DateTime.now();
 
     final post = Post(
@@ -98,12 +99,9 @@ class RemotePostDatasource {
     // Get post to find image
     final post = await getPostById(postId);
     if (post != null) {
-      // Delete image from storage
-      try {
-        await _storage.refFromURL(post.imageUrl).delete();
-      } catch (e) {
-        // Image deletion failed, but continue with post deletion
-      }
+      // Note: Cloudinary images are not deleted automatically
+      // You can delete them manually from Cloudinary Dashboard if needed
+      // Free tier has 10GB which is enough for learning projects
 
       // Update user's post count
       await _firestore.collection('users').doc(post.userId).update({

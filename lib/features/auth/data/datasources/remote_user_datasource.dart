@@ -1,15 +1,16 @@
-import 'dart:io';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_storage/firebase_storage.dart';
 import 'package:mangxahoi/features/auth/domain/entities/user.dart';
+import 'package:mangxahoi/core/services/cloudinary_service.dart';
 
 class RemoteUserDatasource {
   final FirebaseFirestore _firestore;
-  final FirebaseStorage _storage;
+  final CloudinaryService _cloudinary;
 
-  RemoteUserDatasource({FirebaseFirestore? firestore, FirebaseStorage? storage})
-    : _firestore = firestore ?? FirebaseFirestore.instance,
-      _storage = storage ?? FirebaseStorage.instance;
+  RemoteUserDatasource({
+    FirebaseFirestore? firestore,
+    CloudinaryService? cloudinary,
+  }) : _firestore = firestore ?? FirebaseFirestore.instance,
+       _cloudinary = cloudinary ?? CloudinaryService();
 
   Future<User> createUser({
     required String email,
@@ -63,12 +64,12 @@ class RemoteUserDatasource {
   }
 
   Future<void> uploadProfilePhoto(String userId, String localImagePath) async {
-    final ref = _storage.ref().child('profile_photos/$userId/avatar.jpg');
-    await ref.putFile(
-      File(localImagePath),
-      SettableMetadata(contentType: 'image/jpeg'),
+    // Upload to Cloudinary instead of Firebase Storage
+    final url = await _cloudinary.uploadImage(
+      imagePath: localImagePath,
+      folder: 'profile_photos',
+      userId: userId,
     );
-    final url = await ref.getDownloadURL();
 
     await _firestore.collection('users').doc(userId).update({
       'photoUrl': url,

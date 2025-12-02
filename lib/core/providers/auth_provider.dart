@@ -79,6 +79,38 @@ class AuthProvider with ChangeNotifier {
     }
   }
 
+  /// Check authentication state and reload user data
+  Future<void> checkAuthState() async {
+    _isLoading = true;
+    notifyListeners();
+
+    try {
+      await _loadCurrentUser();
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  /// Upload profile photo
+  Future<void> uploadProfilePhoto(String userId, String imagePath) async {
+    _isLoading = true;
+    notifyListeners();
+
+    try {
+      final userDatasource = RemoteUserDatasource();
+      await userDatasource.uploadProfilePhoto(userId, imagePath);
+      // Reload user data after upload
+      await _loadCurrentUser();
+    } catch (e) {
+      _errorMessage = e.toString();
+      rethrow;
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
   void clearError() {
     _errorMessage = null;
     notifyListeners();

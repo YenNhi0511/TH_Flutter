@@ -14,11 +14,21 @@ class ProfilePage extends StatefulWidget {
 class _ProfilePageState extends State<ProfilePage>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
+  bool _isLoadingUser = true;
 
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
+    _loadUserData();
+  }
+
+  Future<void> _loadUserData() async {
+    final authProvider = context.read<AuthProvider>();
+    await authProvider.checkAuthState();
+    setState(() {
+      _isLoadingUser = false;
+    });
   }
 
   @override
@@ -139,10 +149,33 @@ class _ProfilePageState extends State<ProfilePage>
       ),
       body: Consumer<AuthProvider>(
         builder: (context, authProvider, child) {
+          if (_isLoadingUser || authProvider.isLoading) {
+            return const Center(child: CircularProgressIndicator());
+          }
+
           final user = authProvider.currentUser;
 
           if (user == null) {
-            return const Center(child: Text('Vui lòng đăng nhập'));
+            return Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(Icons.error_outline, size: 64, color: Colors.grey),
+                  const SizedBox(height: 16),
+                  const Text('Không thể tải thông tin người dùng'),
+                  const SizedBox(height: 8),
+                  ElevatedButton(
+                    onPressed: () {
+                      setState(() {
+                        _isLoadingUser = true;
+                      });
+                      _loadUserData();
+                    },
+                    child: const Text('Thử lại'),
+                  ),
+                ],
+              ),
+            );
           }
 
           return SingleChildScrollView(

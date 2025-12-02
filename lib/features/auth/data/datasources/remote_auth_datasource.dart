@@ -68,7 +68,33 @@ class RemoteAuthDatasource {
     final firebaseUser = _firebaseAuth.currentUser;
     if (firebaseUser == null) return null;
 
-    return _userDatasource.getUserById(firebaseUser.uid);
+    try {
+      final user = await _userDatasource.getUserById(firebaseUser.uid);
+
+      // If user doesn't exist in Firestore, create it
+      if (user == null) {
+        return await _userDatasource.createUser(
+          email: firebaseUser.email ?? '',
+          userId: firebaseUser.uid,
+          displayName: firebaseUser.displayName ?? 'User',
+        );
+      }
+
+      return user;
+    } catch (e) {
+      // If error loading from Firestore, return basic user info
+      return User(
+        id: firebaseUser.uid,
+        email: firebaseUser.email ?? '',
+        displayName: firebaseUser.displayName ?? 'User',
+        username: firebaseUser.email?.split('@').first ?? 'user',
+        followersCount: 0,
+        followingCount: 0,
+        postsCount: 0,
+        createdAt: DateTime.now(),
+        updatedAt: DateTime.now(),
+      );
+    }
   }
 
   Stream<auth.User?> get authStateChanges => _firebaseAuth.authStateChanges();

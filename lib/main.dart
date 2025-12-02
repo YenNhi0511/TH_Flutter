@@ -25,21 +25,34 @@ class MyApp extends StatelessWidget {
       ],
       child: MaterialApp(
         title: 'Chia Sẻ Ảnh',
+        debugShowCheckedModeBanner: false, // Tắt debug banner
         theme: ThemeData(
           colorScheme: ColorScheme.fromSeed(
-            seedColor: const Color(0xFF6366F1),
+            seedColor: const Color(0xFF0095F6), // Instagram blue
             brightness: Brightness.light,
           ),
           useMaterial3: true,
+          scaffoldBackgroundColor: Colors.white,
+          appBarTheme: const AppBarTheme(
+            backgroundColor: Colors.white,
+            foregroundColor: Colors.black,
+            elevation: 0,
+          ),
         ),
         darkTheme: ThemeData(
           colorScheme: ColorScheme.fromSeed(
-            seedColor: const Color(0xFF6366F1),
+            seedColor: const Color(0xFF0095F6),
             brightness: Brightness.dark,
           ),
           useMaterial3: true,
+          scaffoldBackgroundColor: Colors.black,
+          appBarTheme: const AppBarTheme(
+            backgroundColor: Colors.black,
+            foregroundColor: Colors.white,
+            elevation: 0,
+          ),
         ),
-        themeMode: ThemeMode.system,
+        themeMode: ThemeMode.light, // Instagram chủ yếu light mode
         home: StreamBuilder<User?>(
           stream: FirebaseAuth.instance.authStateChanges(),
           builder: (context, snapshot) {
